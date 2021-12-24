@@ -1,14 +1,12 @@
 import re
 import json
 import requests
-from bs4 import BeautifulSoup
 import time
-import smtplib
+from bs4 import BeautifulSoup
+from datetime import date
 
 user_id = '200751676/jim-howe'
-
 user_tree = {}
-
 headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
 
 def add_route_info(route):
@@ -22,12 +20,12 @@ def add_route_info(route):
 	# Add comment count to route info
 	comment_text = soup.find("h2",{"class":"comment-count"})
 	comment_count = re.search(r'>(.+) Comment',str(comment_text)).groups()[0]
-	user_tree[route_name]['comment_count'] = comment_count	
+	user_tree[route_name]['comments'] = comment_count	
 
-	# Add 	
+	# Add route stats info (num ticks, ratings, etc.)
 	stats_url = 'https://www.mountainproject.com/route/stats/' + route_id + '/' + route_name	
-	state_response = requests.get(stats_url,headers=headers)
-	soup = BeautifulSoup(state_response.text,'lxml')
+	stats_response = requests.get(stats_url,headers=headers)
+	soup = BeautifulSoup(stats_response.text,'lxml')
 	
 	try:
 		star_ratings = re.search(r'Star Ratings.*>(\d+)<',str(soup)).groups()[0]
@@ -64,13 +62,41 @@ def main():
 	route_table = soup.find("table",{"class": "table route-table hidden-xs-down"})
 	route_list = [route for route in route_table.findAll('a') if 'route' in str(route)]
 
+	# Scrape user routes, and add all info to user_tree
 	for route in route_list:
 		add_route_info(route)
+		time.sleep(0.2)
 
+	# Try to load old route data, if doesn't exist make one with the new data
+	try:
+		f = open("user_tree.json","r")
+		old_user_tree = json.loads(f.read())
+		f.close()
+	except:
+		old_user_tree = user_tree
+
+	# Add to updates file with any new updates
+	updates = 0
+	f = open("updates.txt","a")
+	for route in old_user_tree:
+		new_stats = False
+		for stat in old_user_tree[route]:
+			if old_user_tree[route][stat] < user_tree[route][stat]:
+				updates += 1
+				new_stats = True
+				stat = stat.replace('_',' ')[:-1]
+				f.write('Found new ' + stat + ' for route ' + route + ' on ' + str(date.today()) + '\n')
+		if new_stats:
+			name = route.replace(' ','-').lower()
+			route_url = 'https://www.mountainproject.com/route/' + user_tree[route]['id'] + '/' + name
+			f.write(route_url + '\n\n')
+	f.close()
+
+	print('Found ' + str(updates) + ' new updates to your routes')
+
+	# Update reference tree with newest data
 	f = open("user_tree.json", "w")
-
 	json.dump(user_tree, f)
-
 	f.close()
 
 if __name__ == '__main__':
