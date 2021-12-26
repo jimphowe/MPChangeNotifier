@@ -19,7 +19,7 @@ def add_route_info(route):
 
 	# Add comment count to route info
 	comment_text = soup.find("h2",{"class":"comment-count"})
-	comment_count = re.search(r'>(.+) Comment',str(comment_text)).groups()[0]
+	comment_count = int(re.search(r'>(.+) Comment',str(comment_text)).groups()[0])
 	user_tree[route_name]['comments'] = comment_count	
 
 	# Add route stats info (num ticks, ratings, etc.)
@@ -28,28 +28,28 @@ def add_route_info(route):
 	soup = BeautifulSoup(stats_response.text,'lxml')
 	
 	try:
-		star_ratings = re.search(r'Star Ratings.*>(\d+)<',str(soup)).groups()[0]
+		star_ratings = int(re.search(r'Star Ratings.*>(\d+)<',str(soup)).groups()[0])
 		user_tree[route_name]['star_ratings'] = star_ratings
 	except:
 		user_tree[route_name]['star_ratings'] = 0
 
 
 	try:
-		suggested_ratings = re.search(r'Suggested Ratings.*>(\d+)<',str(soup)).groups()[0]
+		suggested_ratings = int(re.search(r'Suggested Ratings.*>(\d+)<',str(soup)).groups()[0])
 		user_tree[route_name]['suggested_ratings'] = suggested_ratings
 	except:
 		user_tree[route_name]['suggested_ratings'] = 0
 
 
 	try:
-		on_to_do_lists = re.search(r'On To-Do Lists.*>(\d+)<',str(soup)).groups()[0]
+		on_to_do_lists = int(re.search(r'On To-Do Lists.*>(\d+)<',str(soup)).groups()[0])
 		user_tree[route_name]['on_to_do_lists'] = on_to_do_lists
 	except:
 		user_tree[route_name]['on_to_do_lists'] = 0
 
 	
 	try:
-		ticks = re.search(r'Ticks.*>(\d+)<',str(soup)).groups()[0]
+		ticks = int(re.search(r'Ticks.*>(\d+)<',str(soup)).groups()[0])
 		user_tree[route_name]['ticks'] = ticks
 	except:
 		user_tree[route_name]['ticks'] = 0
